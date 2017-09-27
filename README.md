@@ -1,2 +1,3 @@
 # ITMO-Visualisation-Course
-University course 'Data visualisation'
+My name: Ilja Pavlov <br>
+my email: ilja.pavlov@yandex.com
