@@ -9,6 +9,6 @@
 <h3>Tasks</h3>
 <ul>
   <li>
-    <a href="hw1/index.html"> First task</a>
+    <a href="hw1/hw1.html"> First task</a>
   </li>
 </ul>
