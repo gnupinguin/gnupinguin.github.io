@@ -1,8 +1,12 @@
 # ITMO-Visualisation-Course
-Ilja Pavlov <br>
-<a>ilja.pavlov@yandex.ru</a>
 
-<h3>Homeworks</h3>
-<li>
-  <ol><a href="hw1/index.html"> first homework</a></ol>
-</li>
+<h3>Contacts</h3>
+Ilja Pavlov <br>
+<a href="mailto:ilja.pavlov@yandex.ru">ilja.pavlov@yandex.ru</a>
+
+<h3>Tasks</h3>
+<ul>
+  <li>
+    <a href="hw1/index.html"> First task</a>
+  </li>
+</ul>
