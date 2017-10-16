@@ -11,4 +11,7 @@
   <li>
     <a href="hw1/hw1.html"> First task</a>
   </li>
+  <li>
+    <a href="hw2/hw2.html"> Second task</a>
+  </li>
 </ul>
