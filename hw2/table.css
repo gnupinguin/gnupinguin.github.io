@@ -27,3 +27,8 @@ td{
   text-align: center;
   /*border-right-color: white;*/
 }
+
+rect {
+  fill:teal;
+  fill-opacity:.8;
+}

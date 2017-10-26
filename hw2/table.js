@@ -131,6 +131,43 @@ window.onload = () => {
         });
         paintToZebra();
 
+        let margin = {top: 50, bottom: 10, left:300, right: 40};
+        let width = 900 - margin.left - margin.right;
+        let height = 900 - margin.top - margin.bottom;
+
+        let xScale = d3.scaleLinear().range([0, width]);
+        let yScale = d3.scaleBand().rangeRound([0, height], .8, 0);
+
+        let svg = d3.select("body").append("svg")
+            .attr("width", width+margin.left+margin.right)
+            .attr("height", height+margin.top+margin.bottom);
+
+        let g = svg.append("g")
+            .attr("transform", "translate("+margin.left+","+margin.top+")");
+
+        // d3.json("countries_2012.json", function(data) {
+        //
+        let selectedData = selectFromDb(data);
+            let max = d3.max(selectedData, d => d.population );
+            let min = 0;
+        //
+            xScale.domain([min, max]);
+            yScale.domain(selectedData.map(d => d.name));
+        //
+            let groups = g.append("g")
+                .selectAll("text")
+                .data(selectedData)
+                .enter()
+                .append("g");
+        //
+            let bars = groups
+                .append("rect")
+                .attr("width", function(d) { return xScale(d.population); })
+                .attr("height", 5)
+                .attr("x", xScale(min))
+                .attr("y", function(d) { return yScale(d.name); })
+        // });
+
     });
 
     function createTable(data, tdTextFormatter) {
@@ -155,29 +192,31 @@ window.onload = () => {
     }
 
     function updateTable(selectedTable, data, tdTextFormatter){
-
-        let podData = data.map(d => {
-            let ans = {name: d.name, continent: d.continent, year: state.years.current};
-            d3.keys(d.years[state.years.current]).forEach(key => ans[key] = d.years[state.years.current][key]);
-            return ans;
-        });
         selectedTable
             .select('tbody')
             .selectAll('tr')
             .remove();
-        appendRows(selectedTable.select('tbody'),
-            state.aggregationFunction(podData, Object.keys(state.filteringContinents))
-                .filter(e => d3.values(state.filteringContinents).includes(true)?
-                    state.filteringContinents[e['continent']]:
-                    true
-            ),
-            tdTextFormatter);
+        appendRows(selectedTable.select('tbody'), selectFromDb(data), tdTextFormatter);
 
         selectedTable
             .select('tbody')
             .selectAll('tr').sort(rowsComparableCondition(state.sortedField));
 
         paintToZebra();
+    }
+
+    function selectFromDb(data) {
+        let podData = data.map(d => {
+            let ans = {name: d.name, continent: d.continent, year: state.years.current};
+            d3.keys(d.years[state.years.current]).forEach(key => ans[key] = d.years[state.years.current][key]);
+            return ans;
+        });
+        return state.aggregationFunction(podData, Object.keys(state.filteringContinents))
+            .filter(e => d3.values(state.filteringContinents).includes(true)?
+                state.filteringContinents[e['continent']]:
+                true
+            );
+
     }
 
     /*convert  to
