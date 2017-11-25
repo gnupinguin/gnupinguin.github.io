@@ -1,45 +1,42 @@
 
 window.onload = () => {
     let state = {
-        sortedField: 'continent',
-        filteringContinents: {},
-        aggregationFunction: aggregateByCountry,
-        years: {
-            min: 0,
-            max: 1,
-            current: 0
-        },
+        sortedField: 'name',
+        select: null,
+        dataService: null,
+        aggregationField: 'name',
+        filterContinents: {},
+        year: 0,
         columns: ['name', 'continent', 'gdp', 'life_expectancy', 'population', 'year'],
 
     };
     let colorSpectrum = {white: "lightgrey", lightgrey: "white"};
 
     d3.json("data/countries_1995_2012.json", function (error, data) {
-        let preparedData  = prepareData(data);
-        data = preparedData.data;
-        state.filteringContinents = preparedData.filteringContinents;
-        let sortedYears = d3.keys(data[0].years).sort();
-        state.years.min = state.years.current = sortedYears[0];
-        state.years.max = sortedYears[sortedYears.length-1];
+        state.dataService = new DataService(data);
+        state.filterContinents = state.dataService.getContinents().reduce((map, cont) => {map[cont] = false; return map;}, {});
+        state.select = () => state.dataService.select(state.year, state.aggregationField, state.sortedField, state.filterContinents);
+        let minYear = state.year = d3.min(state.dataService.years());
+        let maxYear = d3.max(state.dataService.years());
 
         d3.select('body')
             .append('div')
             .attr('class', 'slider')
-            .text('Time update: ' + state.years.min)
+            .text('Time update: ' + minYear)
             .append('input')
             .attr('type', "range")
-            .attr('min', state.years.min)
-            .attr('max', state.years.max)
+            .attr('min', minYear)
+            .attr('max', maxYear)
             .attr('step', 1)
-            .attr('value', state.years.min)
+            .attr('value', minYear)
             .on('input', function () {
-                state.years.current = this.value;
-                updateTable(d3.select('table'), data, cellTextFormatter);
+                state.year = this.value;
+                updateTable(d3.select('table'), cellTextFormatter);
             })
         ;
         d3.select('div.slider')
             .append('span')
-            .text(state.years.max)
+            .text(maxYear)
             .append('br');
 
 
@@ -48,14 +45,14 @@ window.onload = () => {
             .attr('class', 'filter')
             .text('Filter by: ')
             .selectAll("label")
-            .data(Object.keys(state.filteringContinents))
+            .data(d3.keys(state.filterContinents))
             .enter()
             .append('input')
             .attr('type', 'checkbox')
             .attr('value', d => d)
             .on('change', function(continent) {
-                state.filteringContinents[continent] = d3.select(this).property('checked');
-                updateTable(d3.select("table"), data, cellTextFormatter);
+                state.filterContinents[continent] = d3.select(this).property('checked');
+                updateTable(d3.select("table"), cellTextFormatter);
             });
         d3.select('div.filter')
             .selectAll('input[type=checkbox]')
@@ -81,11 +78,11 @@ window.onload = () => {
             .on('change', function () {
                 if (!d3.select(this).property('checked') && d3.select(this).attr('value') === 'none' ||
                     d3.select(this).property('checked') && d3.select(this).attr('value') === 'continent' ){
-                    state.aggregationFunction = aggregateByContinent;
+                    state.aggregationField = 'continent'
                 }else{
-                    state.aggregationFunction = aggregateByCountry;
+                    state.aggregationField = 'country';
                 }
-                updateTable(d3.select('table'), data, cellTextFormatter)
+                updateTable(d3.select('table'), cellTextFormatter)
             });
 
         d3.select('div.aggregation')
@@ -101,14 +98,14 @@ window.onload = () => {
                 this.parentNode.insertBefore(span, this.nextSibling);
             });
 
-        document.body.appendChild(createTable(data, cellTextFormatter));
+        document.body.appendChild(createTable(cellTextFormatter));
         d3.select("table")
             .select('thead')
             .select('tr')
             .selectAll('th')
             .on('click', (headerName, index, array) => {
                 let tbody = d3.select(array[index].parentNode.parentNode.nextSibling);//th->tr->thead, tbody
-                tbody.selectAll("tr").sort(rowsComparableCondition(headerName));
+                tbody.selectAll("tr").sort(state.dataService.rowsComparableCondition(headerName));
                 state.sortedField = headerName;
                 paintToZebra();
             });
@@ -131,50 +128,13 @@ window.onload = () => {
         });
         paintToZebra();
 
-        let margin = {top: 50, bottom: 10, left:300, right: 40};
-        let width = 900 - margin.left - margin.right;
-        let height = 900 - margin.top - margin.bottom;
-
-        let xScale = d3.scaleLinear().range([0, width]);
-        let yScale = d3.scaleBand().rangeRound([0, height], .8, 0);
-
-        let svg = d3.select("body").append("svg")
-            .attr("width", width+margin.left+margin.right)
-            .attr("height", height+margin.top+margin.bottom);
-
-        let g = svg.append("g")
-            .attr("transform", "translate("+margin.left+","+margin.top+")");
-
-        // d3.json("countries_2012.json", function(data) {
-        //
-        let selectedData = selectFromDb(data);
-            let max = d3.max(selectedData, d => d.population );
-            let min = 0;
-        //
-            xScale.domain([min, max]);
-            yScale.domain(selectedData.map(d => d.name));
-        //
-            let groups = g.append("g")
-                .selectAll("text")
-                .data(selectedData)
-                .enter()
-                .append("g");
-        //
-            let bars = groups
-                .append("rect")
-                .attr("width", function(d) { return xScale(d.population); })
-                .attr("height", 5)
-                .attr("x", xScale(min))
-                .attr("y", function(d) { return yScale(d.name); })
-        // });
-
     });
 
-    function createTable(data, tdTextFormatter) {
+    function createTable(tdTextFormatter) {
         let table = document.createElement('table');
         table.appendChild(createThead());
         table.appendChild(document.createElement('tbody'));
-        updateTable(d3.select(table), data, tdTextFormatter);
+        updateTable(d3.select(table), tdTextFormatter);
         return table;
     }
 
@@ -191,65 +151,20 @@ window.onload = () => {
         return thead.node();
     }
 
-    function updateTable(selectedTable, data, tdTextFormatter){
+    function updateTable(selectedTable, tdTextFormatter){
         selectedTable
             .select('tbody')
             .selectAll('tr')
             .remove();
-        appendRows(selectedTable.select('tbody'), selectFromDb(data), tdTextFormatter);
-
-        selectedTable
-            .select('tbody')
-            .selectAll('tr').sort(rowsComparableCondition(state.sortedField));
+        appendRows(selectedTable.select('tbody'), tdTextFormatter);
 
         paintToZebra();
     }
 
-    function selectFromDb(data) {
-        let podData = data.map(d => {
-            let ans = {name: d.name, continent: d.continent, year: state.years.current};
-            d3.keys(d.years[state.years.current]).forEach(key => ans[key] = d.years[state.years.current][key]);
-            return ans;
-        });
-        return state.aggregationFunction(podData, Object.keys(state.filteringContinents))
-            .filter(e => d3.values(state.filteringContinents).includes(true)?
-                state.filteringContinents[e['continent']]:
-                true
-            );
 
-    }
-
-    /*convert  to
-    {
-        name,
-        continent,
-        years:{
-            1995:{population, gdp, ...},
-            ...
-        }
-    }*/
-    function prepareData(data){
-        data = JSON.parse(JSON.stringify(data));
-        let filteringContinents = {};
-        let newData = data.map((country) => {
-            filteringContinents[country.continent] = false;
-            let newCountry = {name: country.name, continent: country.continent, years: {}};
-            country.years.forEach(dataByYear => {
-                newCountry.years[dataByYear.year] = dataByYear;
-                let year =  dataByYear.year;
-                delete newCountry.years[dataByYear.year].year;
-                d3.keys(newCountry.years[year])
-                    .filter(key => !state.columns.includes(key))
-                    .forEach(key => delete newCountry.years[year][key])
-            } );
-            return newCountry;
-        });
-        return {data: newData, filteringContinents: filteringContinents};
-    }
-
-    function appendRows(selectedTbody, data, /*function(columnName, cellValue)*/tdTextFormatter ){
+    function appendRows(selectedTbody, /*function(columnName, cellValue)*/tdTextFormatter ){
         let rows = selectedTbody.selectAll("tr")
-            .data(data)
+            .data(state.select())
             .enter()
             .append("tr");
 
@@ -259,41 +174,6 @@ window.onload = () => {
             .append("td")
             .text(d => d);
 
-    }
-
-    function aggregateByContinent(data){
-        let nested_rows =  d3.nest()
-            .key(d => d['continent'])
-            .rollup(leaves => {
-                let initial = JSON.parse(JSON.stringify(leaves[0]));
-                d3.keys(initial).forEach(key => initial[key] = 0);
-                initial.name = initial.continent = leaves[0].continent;
-                initial.year = leaves[0].year;
-
-                return leaves.reduce( (prev, curr) => {
-                    let ans = {};
-                    d3.keys(prev).forEach(key => {
-                        switch (key) {
-                            case 'gdp':
-                            case 'population':
-                                ans[key] = prev[key] += curr[key];
-                                break;
-                            case 'life_expectancy':
-                                ans[key] = prev[key] += curr[key] / leaves.length;
-                                break;
-                            default:
-                                ans[key] = prev[key];
-                        }
-                    });
-                    return ans;
-                } , initial);
-            },)
-            .entries(data);
-        return nested_rows.map(e => e.value);
-    }
-
-    function aggregateByCountry(data){
-        return data;
     }
 
 
@@ -318,18 +198,4 @@ window.onload = () => {
         d3.selectAll("tr").style('background-color', () => Object.keys(colorSpectrum)[(counter++) % 2]);
     }
 
-    function rowsComparableCondition(header){
-        switch (header){
-            case 'name': return (r1, r2) => r1[header].localeCompare(r2[header]);
-            case 'continent':
-                return (r1, r2) => {
-                    let result = r1[header].localeCompare(r2[header]);
-                    if (!result) {
-                        result = r1['name'].localeCompare(r2['name']);
-                    }
-                    return result;
-                };
-            default: return (r1, r2) =>  d3.descending(r1[header], r2[header]);
-        }
-    }
 };
