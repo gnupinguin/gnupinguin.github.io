@@ -52,7 +52,7 @@ window.onload = () => {
                 switch(value) {
                     case 'table':
                         span.textContent = 'Table';
-                        d3.select(this).property('checked', true);
+                        // d3.select(this).property('checked', true);
                         break;
                     case 'barchart':
                         span.textContent = 'Bar chart';
@@ -144,7 +144,7 @@ window.onload = () => {
 
         d3.select('div.sort')
             .selectAll('input[type=radio]')
-            .data(['name', 'population', 'gdp'])
+            .data(['name', 'population', 'gdp', 'life_expectancy'])
             .enter()
             .append('input')
             .attr('type', 'radio')
@@ -171,6 +171,10 @@ window.onload = () => {
                     case 'name':
                         span.textContent = 'Name';
                         d3.select(this).property('checked', true);
+                        break;
+                    case 'life_expectancy':
+                        span.textContent = 'Life expectancy';
+
                         break;
                 }
                 this.parentNode.insertBefore(span, this.nextSibling);
@@ -219,7 +223,8 @@ window.onload = () => {
         d3.select('div.performance')
             .selectAll('input')
             .filter(v => v === 'table')
-            .on('change')()
+            .property('checked',true)
+            .on('change')('table')
     })
 
 }
