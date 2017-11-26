@@ -1,6 +1,6 @@
 class DataService {
     /*convert  to
-    { 1995:[{name,continent,population, gdp, year},...],...}
+    { 1995:[{name, continent, population, gdp, year},...],...}
     */
     constructor(data){
         let continentsMap = {};
