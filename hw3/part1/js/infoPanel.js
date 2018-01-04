@@ -21,6 +21,20 @@ class InfoPanel {
         // Hint: Select the appropriate ids to update the text content.
 
         //Set Labels
+        // ***
+        d3.select("#edition").text(oneWorldCup['EDITION'])
+        d3.select("#host").text(oneWorldCup['host'])
+        d3.select("#winner").text(oneWorldCup['winner'])
+        d3.select("#silver").text(oneWorldCup['runner_up'])
+
+        d3.select("#teams").selectAll("ul").remove();
+        d3.select("#teams")
+            .append('ul')
+            .selectAll('li')
+            .data(oneWorldCup['TEAM_NAMES'].split(","))
+            .enter()
+            .append('li')
+            .text(d => d)
 
     }
 

@@ -21,6 +21,20 @@ class Map {
         // the colors and markers for hosts/teams/winners, you can use
         // d3 selection and .classed to set these classes on and off here.
 
+        d3.select('#map')
+            .selectAll('.team')
+            .classed('team', false)
+            .attr('class', 'countries')
+        d3.select('#map')
+            .selectAll('.host')
+            .classed('host', false)
+            .attr('class', 'countries')
+
+        d3.select('#map')
+            .selectAll('.gold').remove();
+        d3.select('#map')
+            .selectAll('.silver').remove();
+
     }
 
     /**
@@ -49,6 +63,35 @@ class Map {
 
 
         // Add a marker for gold/silver medalists
+
+        let teamList = worldcupData['TEAM_LIST'].split(',');
+        let participants = d3.select('#map')
+            .selectAll('.countries')
+            .filter(function (d) {return teamList.includes(d.id)})
+            .attr('class', 'team')
+
+        participants.filter(function (d) {return d.id === worldcupData['host_country_code']})
+            .attr('class', 'host')
+
+        let path = d3.geoPath().projection(this.projection).pointRadius(10);
+
+        d3.select('#map')
+            .append('path')
+            .attr('class', 'gold')
+            .attr('d',  path({
+                    'type': 'Point',
+                    'coordinates': [worldcupData['WIN_LON'], worldcupData['WIN_LAT']]
+                }));
+
+        d3.select('#map')
+            .append('path')
+            .attr('class', 'silver')
+            .attr('d',  path({
+                'type': 'Point',
+                'coordinates': [worldcupData['RUP_LON'], worldcupData['RUP_LAT']]
+            }));
+
+
     }
 
     /**
@@ -70,6 +113,15 @@ class Map {
 
         // Make sure and give your paths the appropriate class (see the .css selectors at
         // the top of the provided html file)
+
+        let path = d3.geoPath().projection(this.projection);
+
+        let countries = topojson.feature(world, world.objects.countries).features;
+        d3.select('#map')
+            .selectAll('.countries').data(countries).enter()
+            .append('path')
+            .attr('class', 'countries')
+            .attr('d', path);
 
     }
 
