@@ -111,7 +111,24 @@ class Table {
 
         // Set sorting callback for clicking on headers
 
-        // Clicking on headers should also trigger collapseList() and updateTable(). 
+        // Clicking on headers should also trigger collapseList() and updateTable().
+
+        d3.select('#matchTable').select('thead').select('tr')
+            .selectAll('th, td')
+            .on('click', (elem, i, arr) => {
+                //elem is undefined because it is not binding with data
+                let field = d3.select(arr[i]).text();
+                this.collapseList()
+                this.tableElements = this.tableElements.sort(this.sortingFunctionByField(field))
+                this.updateTable()
+            })
+            .on('dblclick',(elem, i, arr) => {
+                //elem is undefined because it is not binding with data
+                let field = d3.select(arr[i]).text();
+                this.collapseList()
+                this.tableElements = this.tableElements.sort((a, b) => -1 * this.sortingFunctionByField(field)(a, b))
+                this.updateTable()
+            })
 
 
     }
@@ -288,9 +305,28 @@ class Table {
         this.tableElements = this.tableElements.filter(e => isAggregate(e.value))
     }
 
+    sortingFunctionByField(field){
+        switch(field) {
+            case 'Team':
+                return (a, b) => b.key.localeCompare(a.key);
+            case 'Goals':
+                return (a, b) => b.value[this.tableHeaders[0]] - a.value[this.tableHeaders[0]];
+            case 'Round/Result':
+                    return (a, b) => b.value[this.tableHeaders[1]].ranking - a.value[this.tableHeaders[1]].ranking;
+            case 'Wins':
+                return (a, b) => b.value[this.tableHeaders[2]] - a.value[this.tableHeaders[2]];
+            case 'Losses':
+                return (a, b) => b.value[this.tableHeaders[3]] - a.value[this.tableHeaders[3]];
+            case 'Total Games':
+                return (a, b) => b.value[this.tableHeaders[4]] - a.value[this.tableHeaders[4]];
+
+        }
+    }
+
 
 }
 
 function isAggregate(d) {
     return d.type === 'aggregate';
 }
+
