@@ -75,7 +75,6 @@ class Table {
         this.goalScale = d3.scaleLinear()
             .range([0, this.goalCell.width])
             .domain([minGoals, maxGoals]);
-        console.log(this.goalScale)
 
         this.goalColorScale = d3.scaleLinear()
             .domain([minGoals, maxGoals])
@@ -141,15 +140,16 @@ class Table {
 
         let tbody = d3.select('#matchTable')
             .select('tbody');
+        tbody.selectAll('tr').remove();
 
         let tr = tbody.selectAll('tr')
             .data(this.tableElements).enter()
             .append('tr');
 
         let td = tr.selectAll("td").data(d => {
-            let team = {type: 'aggregate', vis: 'text', value: d.key};
+            let team = {type: d.value.type, vis: 'text', value: d.key};
             let goals = {
-                type: 'aggregate',
+                type:  d.value.type,
                 vis: 'goals',
                 value: {
                     'Goals Conceded': d.value[this.goalsConcededHeader],
@@ -157,27 +157,27 @@ class Table {
                 }
             };
 
-            let roundResult = {type: 'aggregate', vis: 'text', value: d.value.Result.label};
-            let wins = {type: 'aggregate', vis: 'bar', value: d.value.Wins};
-            let losses = {type: 'aggregate', vis: 'bar', value: d.value.Losses};
-            let total = {type: 'aggregate', vis: 'bar', value: d.value.TotalGames};
+            let roundResult = {type:  d.value.type, vis: 'text', value: d.value.Result.label};
+            let wins = {type:  d.value.type, vis: 'bar', value: d.value.Wins};
+            let losses = {type:  d.value.type, vis: 'bar', value: d.value.Losses};
+            let total = {type:  d.value.type, vis: 'bar', value: d.value.TotalGames};
 
             return [team, goals, roundResult, wins, losses, total];
         }).enter().append('td');
 
-        //add matches bars
+        //add games bars
         let g = td.filter(d => d.vis === 'bar')
             .append('svg')
             .attr('width', this.cell.width)
             .attr('height', this.cell.height)
             .append('g');
 
-        g.append('rect')
+        g.append('rect').filter(isAggregate)
             .attr("fill", d => this.aggregateColorScale(d.value))
             .attr('height', this.bar.height)
             .attr("width", d => this.gameScale(d.value))
 
-        g.append('text').text(d => d.value)
+        g.filter(isAggregate).append('text').text(d => d.value)
             .style('fill', 'white')
             .attr("text-anchor", "middle")
             .attr("dy", '1em')
@@ -186,26 +186,37 @@ class Table {
         //add text cells
         td.filter(d => d.vis === 'text')
             .text(d => d.value)
-            .attr('class', 'aggregate')
+            .filter((elem, i, arr) => i === 0)
+            .text(d => isAggregate(d)? d.value : 'x' + d.value)
+            .attr('class', d => d.type);
 
-        //add goals bars
         g = td.filter(d => d.vis === 'goals')
             .append('svg')
-            // .attr('width', this.goalCell.width)
             .attr('height', this.cell.height)
             .append('g');
 
         //tbody.td has padding 5, thead.td has padding 1 and goalAxis has translate on this.cell.buffer
         let xOffset = this.cell.buffer + 1 - 5;
 
-        //for rect position
+        //for vertical rect position
         let yOffset = this.cell.buffer/2;
 
+        let circleRadius = this.bar.height / 4;
+
+        let cyPosition = this.bar.height / 4 + yOffset;
+
+        //add rect
         g.append('rect')
-            .attr('height', this.bar.height / 2)
-            .attr("width", d => this.goalScale(Math.abs(d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader])))
-            .attr('x', d => xOffset + this.goalScale(d3.min([d.value[this.goalsMadeHeader], d.value[this.goalsConcededHeader]])))
-            .attr('transform', `translate(${0},${yOffset})`)
+            .attr('height', d => isAggregate(d)? this.bar.height / 2 : this.bar.height / 4)
+            .attr("width", d => {
+                let width = this.goalScale(Math.abs(d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader]));
+                return isAggregate(d)? width : width - 2*circleRadius;
+            })
+            .attr('x', d => {
+                let x = xOffset + this.goalScale(d3.min([d.value[this.goalsMadeHeader], d.value[this.goalsConcededHeader]]));
+                return isAggregate(d)? x : x + circleRadius;
+            })
+            .attr('y', d => isAggregate(d)? cyPosition - circleRadius : cyPosition - circleRadius/2)
             .attr('class', 'goalBar')
             .attr('fill', d => d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader] > 0 ? '#034e7b':'#cb181d' )
 
@@ -214,26 +225,42 @@ class Table {
 
         let gNullDifference = g.filter(d => !(d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader]));
 
+        //add circles
+
         gNotNullDifference
             .append('circle')
             .attr('cx', d => this.goalScale(d.value[this.goalsMadeHeader]) + xOffset)
-            .attr('cy', this.bar.height / 4 + yOffset)
-            .attr('r', this.bar.height / 4)
-            .attr('fill', '#034e7b')
+            .attr('cy', cyPosition)
+            .attr('r', circleRadius)
+            .style('fill', d => isAggregate(d)? '#034e7b' : 'none')
+            .style('stroke', d => isAggregate(d)? 'none' : '#034e7b')
+            .style('stroke-width', d => isAggregate(d)? 'none' : 2);
 
         gNotNullDifference
             .append('circle')
             .attr('cx', d => this.goalScale(d.value[this.goalsConcededHeader]) + xOffset)
-            .attr('cy', this.bar.height / 4 + yOffset)
-            .attr('r', this.bar.height / 4)
-            .attr('fill', '#cb181d');
+            .attr('cy', cyPosition)
+            .attr('r', circleRadius)
+            .style('fill', d => isAggregate(d)? '#cb181d' : 'none')
+            .style('stroke', d => isAggregate(d)? 'none' : '#cb181d')
+            .style('stroke-width', d => isAggregate(d)? 'none' : 2);
 
         gNullDifference
             .append('circle')
             .attr('cx', d => this.goalScale(d.value[this.goalsMadeHeader]) + xOffset)
-            .attr('cy', this.bar.height / 4 + yOffset)
-            .attr('r', this.bar.height / 4)
-            .attr('fill', 'grey')
+            .attr('cy', cyPosition)
+            .attr('r', circleRadius)
+            .style('fill', d => isAggregate(d)? 'grey' : 'none')
+            .style('stroke', d => isAggregate(d)? 'none' : 'grey')
+            .style('stroke-width', d => isAggregate(d)? 'none' : 2);
+
+
+        tr.on('click', (elem, i, arr) => {
+            if (isAggregate(elem.value)){
+                this.updateList(i);
+                this.updateTable();
+            }
+        })
     };
 
     /**
@@ -244,7 +271,11 @@ class Table {
         // ******* TODO: PART IV *******
        
         //Only update list for aggregate clicks, not game clicks
-        
+        if (this.tableElements[i+1] && !isAggregate(this.tableElements[i+1].value)){
+            this.tableElements.splice(i+1, this.tableElements[i].value.games.length )
+        }else {
+            this.tableElements.splice(i+1, 0, ...this.tableElements[i].value.games.slice());
+        }
     }
 
     /**
@@ -254,8 +285,12 @@ class Table {
     collapseList() {
         
         // ******* TODO: PART IV *******
-
+        this.tableElements = this.tableElements.filter(e => isAggregate(e.value))
     }
 
 
+}
+
+function isAggregate(d) {
+    return d.type === 'aggregate';
 }
