@@ -6,7 +6,7 @@ class Table {
     constructor(teamData, treeObject) {
 
         //Maintain reference to the tree Object; 
-        this.tree = null;
+        this.tree = treeObject;
 
         // Create list of all elements that will populate the table
         // Initially, the tableElements will be identical to the teamData
@@ -277,8 +277,11 @@ class Table {
             if (isAggregate(elem.value)){
                 this.updateList(i);
                 this.updateTable();
+
             }
         })
+            .on("mouseover", d => this.tree.updateTree(d))
+            .on("mouseout", d => this.tree.clearTree())
     };
 
     /**

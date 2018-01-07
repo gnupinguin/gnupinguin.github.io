@@ -4,7 +4,6 @@ class Tree {
      * Creates a Tree Object
      */
     constructor() {
-        this.tree = null;
     }
 
     /**
@@ -33,18 +32,18 @@ class Tree {
 
         let height = 800, width = 300;
 
-        this.tree = d3.tree()
+        let tree = d3.tree()
             .size([height, width]);
 
         let nodes = d3.hierarchy(root, d => d.children)
 
         // maps the node data to the tree layout
-        nodes = this.tree(nodes);
+        nodes = tree(nodes);
 
 
-            let g = d3.select('#tree')
-                .attr("transform",
-                    "translate(" + 100 + "," + 0 + ")");
+        let g = d3.select('#tree')
+            .attr("transform",
+                "translate(" + 100 + "," + 0 + ")");
 
         // adds the links between the nodes
         let link = g.selectAll(".link")
@@ -69,7 +68,7 @@ class Tree {
         node.append("circle")
             .attr("r", 10)
             .filter(d => d.data.data.Wins == 1)
-            .style('fill','#364e74')
+            .style('fill', '#364e74')
 
         // adds the text to the node
         node.append("text")
@@ -89,8 +88,28 @@ class Tree {
      */
     updateTree(row) {
         // ******* TODO: PART VII *******
+        let isAggregate = row.value.type === 'aggregate';
+        let gameTeams;
+        if (!isAggregate) gameTeams = [row.key, row.value.Opponent];
 
-    }
+        d3.select('#tree').selectAll('.link')
+            .filter(d => isAggregate ?
+                d.parent && d.parent.data.data.Team === row.key && d.data.data.Team === row.key :
+                gameTeams.includes(d.data.data.Team) && gameTeams.includes(d.data.data.Opponent))
+            .attr('class', function () {
+                return d3.select(this).attr('class') + ' selected';
+            });
+
+        d3.select('#tree').selectAll('text')
+            .filter(d => isAggregate ?
+                d.data.data.Team === row.key :
+                gameTeams.includes(d.data.data.Team) && gameTeams.includes(d.data.data.Opponent))
+            .attr('class', function () {
+                return d3.select(this).attr('class') + ' selectedLabel';
+            })
+
+
+}
 
     /**
      * Removes all highlighting from the tree.
@@ -98,6 +117,10 @@ class Tree {
     clearTree() {
         // ******* TODO: PART VII *******
 
-        // You only need two lines of code for this! No loops! 
+        // You only need two lines of code for this! No loops!
+        d3.selectAll('.selected, .selectedLabel')
+            .classed('selected', false)
+            .classed('selectedLabel', false)
+
     }
 }
