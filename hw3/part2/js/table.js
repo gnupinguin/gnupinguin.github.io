@@ -209,6 +209,7 @@ class Table {
 
         g = td.filter(d => d.vis === 'goals')
             .append('svg')
+            .attr('width', this.goalCell.axisWidth)
             .attr('height', this.cell.height)
             .append('g');
 
