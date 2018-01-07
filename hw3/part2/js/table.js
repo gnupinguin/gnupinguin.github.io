@@ -6,14 +6,14 @@ class Table {
     constructor(teamData, treeObject) {
 
         //Maintain reference to the tree Object; 
-        this.tree = null; 
+        this.tree = null;
 
         // Create list of all elements that will populate the table
         // Initially, the tableElements will be identical to the teamData
-        this.tableElements = null; // 
+        this.tableElements = null; //
 
         ///** Store all match data for the 2014 Fifa cup */
-        this.teamData = null;
+        this.teamData = teamData;
 
         //Default values for the Table Headers
         this.tableHeaders = ["Delta Goals", "Result", "Wins", "Losses", "TotalGames"];
@@ -23,6 +23,11 @@ class Table {
             "width": 70,
             "height": 20,
             "buffer": 15
+        };
+
+        this.goalCell = {
+            axisWidth: 200,
+            width: 200 - this.cell.buffer*2
         };
 
         this.bar = {
@@ -63,13 +68,53 @@ class Table {
 
         //add GoalAxis to header of col 1.
 
+        let minGoals = 0;
+        let maxGoals = d3.max(this.teamData.map(e => e.value[this.goalsMadeHeader]));
+
+
+        this.goalScale = d3.scaleLinear()
+            .range([0, this.goalCell.width])
+            .domain([minGoals, maxGoals]);
+        console.log(this.goalScale)
+
+        this.goalColorScale = d3.scaleLinear()
+            .domain([minGoals, maxGoals])
+            .range(['#cb181d', '#034e7b'])
+            .interpolate(d3.interpolateRgb);
+
+        let minGames = 0;
+        let maxGames = d3.max(this.teamData.map(e => e.value.TotalGames));
+
+        this.gameScale = d3.scaleLinear()
+            .range([0, this.cell.width])
+            .domain([minGames, maxGames]);
+
+        this.aggregateColorScale = d3.scaleLinear()
+            .domain([minGames, maxGames])
+            .range(['#ece2f0', '#016450'])
+            .interpolate(d3.interpolateRgb);
+
+
+        let goalAxis = d3.axisTop(this.goalScale);
+
+        d3.select('#goalHeader')
+            .append('svg')
+            .attr('width', this.goalCell.axisWidth)
+            .attr('height', this.cell.height)
+            .append('g')
+            .attr('transform', `translate(${this.cell.buffer},${this.cell.buffer + 2})`)
+            .call(goalAxis);
+
+        this.tableElements = this.teamData.slice()
+
+
         // ******* TODO: PART V *******
 
         // Set sorting callback for clicking on headers
 
         // Clicking on headers should also trigger collapseList() and updateTable(). 
 
-       
+
     }
 
 
@@ -84,7 +129,7 @@ class Table {
 
         //Append td elements for the remaining columns. 
         //Data for each cell is of the type: {'type':<'game' or 'aggregate'>, 'value':<[array of 1 or two elements]>}
-        
+
         //Add scores as title property to appear on hover
 
         //Populate cells (do one type of cell at a time )
@@ -93,6 +138,102 @@ class Table {
 
         //Set the color of all games that tied to light gray
 
+
+        let tbody = d3.select('#matchTable')
+            .select('tbody');
+
+        let tr = tbody.selectAll('tr')
+            .data(this.tableElements).enter()
+            .append('tr');
+
+        let td = tr.selectAll("td").data(d => {
+            let team = {type: 'aggregate', vis: 'text', value: d.key};
+            let goals = {
+                type: 'aggregate',
+                vis: 'goals',
+                value: {
+                    'Goals Conceded': d.value[this.goalsConcededHeader],
+                    'Goals Made': d.value[this.goalsMadeHeader]
+                }
+            };
+
+            let roundResult = {type: 'aggregate', vis: 'text', value: d.value.Result.label};
+            let wins = {type: 'aggregate', vis: 'bar', value: d.value.Wins};
+            let losses = {type: 'aggregate', vis: 'bar', value: d.value.Losses};
+            let total = {type: 'aggregate', vis: 'bar', value: d.value.TotalGames};
+
+            return [team, goals, roundResult, wins, losses, total];
+        }).enter().append('td');
+
+        //add matches bars
+        let g = td.filter(d => d.vis === 'bar')
+            .append('svg')
+            .attr('width', this.cell.width)
+            .attr('height', this.cell.height)
+            .append('g');
+
+        g.append('rect')
+            .attr("fill", d => this.aggregateColorScale(d.value))
+            .attr('height', this.bar.height)
+            .attr("width", d => this.gameScale(d.value))
+
+        g.append('text').text(d => d.value)
+            .style('fill', 'white')
+            .attr("text-anchor", "middle")
+            .attr("dy", '1em')
+            .attr("x", d => this.gameScale(d.value) - 9)
+
+        //add text cells
+        td.filter(d => d.vis === 'text')
+            .text(d => d.value)
+            .attr('class', 'aggregate')
+
+        //add goals bars
+        g = td.filter(d => d.vis === 'goals')
+            .append('svg')
+            // .attr('width', this.goalCell.width)
+            .attr('height', this.cell.height)
+            .append('g');
+
+        //tbody.td has padding 5, thead.td has padding 1 and goalAxis has translate on this.cell.buffer
+        let xOffset = this.cell.buffer + 1 - 5;
+
+        //for rect position
+        let yOffset = this.cell.buffer/2;
+
+        g.append('rect')
+            .attr('height', this.bar.height / 2)
+            .attr("width", d => this.goalScale(Math.abs(d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader])))
+            .attr('x', d => xOffset + this.goalScale(d3.min([d.value[this.goalsMadeHeader], d.value[this.goalsConcededHeader]])))
+            .attr('transform', `translate(${0},${yOffset})`)
+            .attr('class', 'goalBar')
+            .attr('fill', d => d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader] > 0 ? '#034e7b':'#cb181d' )
+
+        //if goals difference is not 0
+        let gNotNullDifference = g.filter(d => d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader]);
+
+        let gNullDifference = g.filter(d => !(d.value[this.goalsMadeHeader] - d.value[this.goalsConcededHeader]));
+
+        gNotNullDifference
+            .append('circle')
+            .attr('cx', d => this.goalScale(d.value[this.goalsMadeHeader]) + xOffset)
+            .attr('cy', this.bar.height / 4 + yOffset)
+            .attr('r', this.bar.height / 4)
+            .attr('fill', '#034e7b')
+
+        gNotNullDifference
+            .append('circle')
+            .attr('cx', d => this.goalScale(d.value[this.goalsConcededHeader]) + xOffset)
+            .attr('cy', this.bar.height / 4 + yOffset)
+            .attr('r', this.bar.height / 4)
+            .attr('fill', '#cb181d');
+
+        gNullDifference
+            .append('circle')
+            .attr('cx', d => this.goalScale(d.value[this.goalsMadeHeader]) + xOffset)
+            .attr('cy', this.bar.height / 4 + yOffset)
+            .attr('r', this.bar.height / 4)
+            .attr('fill', 'grey')
     };
 
     /**
