@@ -34,7 +34,8 @@
     stroke: #252525;
 }
 
-.selected{
+
+ .selected {
     fill: #d20a11;
 }
 
@@ -103,7 +104,7 @@ header {
 }
 
 
-#details {
+#details, #countryInfoView {
     width: 200px;
     padding: 0.5em;
     float: left;
@@ -111,6 +112,10 @@ header {
     border-width: 1px;
     border-color: #d9d9d9;
     border-right-style: solid;
+}
+
+#countryInfoView {
+    clear:both;
 }
 
 #bar-chart {

@@ -3,7 +3,8 @@ class InfoPanel {
     /**
      * Creates a infoPanel Object
      */
-    constructor() {
+    constructor(data) {
+        this.countryInfoPanel = new CountryInfoPanel(data);
     }
 
     /**
@@ -35,6 +36,9 @@ class InfoPanel {
             .enter()
             .append('li')
             .text(d => d)
+            .on('click', d => {
+                this.countryInfoPanel.updateCountryInfo(d)
+            });
 
     }
 

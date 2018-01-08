@@ -52,7 +52,6 @@ d3.csv("data/fifa-matches.csv", function (error, matchesCSV) {
         })
         .entries(matchesCSV);
 
-    console.log(data)
 
     d3.csv("data/fifa-tree.csv", function (error, treeCSV) {
         //Create a unique "id" field for each game
