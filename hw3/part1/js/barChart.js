@@ -17,17 +17,6 @@ class BarChart {
      * Render and update the bar chart based on the selection of the data type in the drop-down box
      */
     updateBarChart(selectedDimension) {
-        // ******* TODO: PART I *******
-
-
-        // Create the x and y scales; make
-        // sure to leave room for the axes
-
-        // Create colorScale
-
-        // Create the axes (hint: use #xAxis and #yAxis)
-
-        // Create the bars (hint: use #bars)
 
         let data = this.chooseData(selectedDimension);
         let svg = d3.select('#barChart');
@@ -49,51 +38,44 @@ class BarChart {
         let yAxis = d3.axisLeft(yScale);
 
         svg.select('#xAxis')
-            .attr("transform", // сдвиг оси вниз и вправо на margin
+            .attr("transform",
                 `translate(${margin.left},${height + margin.top})`)
             .call(xAxis)
             .selectAll('text')
             .attr('transform', `rotate(${-90})`)
             .style("text-anchor", "end")
             .attr("dx", "-.8em")
-            .attr("dy", "-.55em")
+            .attr("dy", "-.55em");
 
 
         svg.select('#yAxis')
-            .attr("transform", // сдвиг оси вниз и вправо на margin
+            .attr("transform",
                 `translate(${margin.left},${margin.top})`)
+            .transition()
+            .duration(2000)
+            .delay(200)
             .call(yAxis);
 
+
         svg.select('#bars')
-            .attr("transform",  // сдвиг объекта вправо
-                `translate(${0},${margin.top})`)
-            .selectAll('g').remove();
+            .attr("transform",
+                `translate(${0},${margin.top})`);
 
-        let bars = svg.select('#bars').selectAll('g')
-            .data(data)
-            .enter()
-            .append('g')
-            .append('rect')
-            .style("fill", "steelblue")
-            .attr('x' , d => margin.left + xScale(d.year))
-            .attr('y', d => yScale(d.value))
-            .attr('height', d => 300 - yScale(d.value))
-            .attr("width", xScale.range()[1]/data.length -2)
-            .text(d => d.value)
+        let barWidth = xScale.range()[1]/data.length - 2;
+
+        let rect = svg.select('#bars').selectAll('rect').data(data);
+        this.rectConfig(rect, xScale, yScale, margin, height, barWidth);
+        rect = rect.enter().append('rect');
+
+        this.rectConfig(rect, xScale, yScale, margin, height,barWidth);
 
 
-        // ******* TODO: PART II *******
 
-        // Implement how the bars respond to click events
-        // Color the selected bar to indicate is has been selected.
-        // Make sure only the selected bar has this new color.
-
-        // Call the necessary update functions for when a user clicks on a bar.
-        // Note: think about what you want to update when a different bar is selected.
-
-        bars.on('click', (elem, i, arr) => {
-            bars.style("fill", "steelblue")
-            d3.select(arr[i]).style("fill", 'orange')
+        rect.on('click', (elem, i, arr) => {
+            // rect.style("fill", "steelblue");
+            rect.classed('selected', false)
+            d3.select(arr[i]).attr("class", 'selected');
+            // d3.select(arr[i]).classed('selected', true);
 
             let worldCupData = this.selectByYear(elem.year);
 
@@ -103,6 +85,24 @@ class BarChart {
 
     }
 
+    rectConfig(selectedRect, xScale, yScale, margin, height, barWidth){
+        let colorScale = d3.scaleLinear()
+            .domain(yScale.domain())
+            .range(['#034e7b', '#61c3ff', ])
+            .interpolate(d3.interpolateRgb);
+
+        selectedRect.attr('x' , d => margin.left + xScale(d.year))
+            .attr('y', d => yScale(d.value))
+            //rotate rect near own center
+            .attr('transform', d => `rotate(180 ${margin.left + xScale(d.year)+ barWidth/2} ${ yScale(d.value) + (height - yScale(d.value))/2})`)
+            .transition()
+            .duration(2000)
+            .delay(200)
+            .attr("width", barWidth)
+            .attr('height', d => height - yScale(d.value))
+            .attr("fill", d => colorScale(d.value))
+    }
+
     /**
      *  Check the drop-down box for the currently selected data type and update the bar chart accordingly.
      *
@@ -110,17 +110,8 @@ class BarChart {
      *  goals, matches, attendance and teams.
      */
     chooseData(selectedDimension) {
-
-        // ******* TODO: PART I *******
-        //Changed the selected data when a user selects a different
-        // menu item from the drop down.
-
-        // if (selectedDimension === 'attendance'){
-        //     selectedDimension = 'average_' + selectedDimension;
-        // }
-        // selectedDimension = selectedDimension.toUpperCase();
-
-        return this.allData.map(e => {return {year: Number(e['YEAR']), value: Number(e[selectedDimension])}}).sort((a, b) => a.year - b.year);
+        return this.allData.map(e =>
+        {return {year: Number(e['YEAR']), value: Number(e[selectedDimension])}}).sort((a, b) => a.year - b.year);
     }
 
     selectByYear(year){
