@@ -32,15 +32,20 @@ function barchartPerformance(d3SelectedRootElement, state) {
         .attr("height", height + margin.top + margin.bottom);
 
     svg.append("g")
-
         .attr("class", "y-axis")
-        .attr("transform", // сдвиг оси вниз и вправо на margin
+        .attr("transform",
             `translate(${margin.left},${0})`)
         .call(yAxis)
 
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform",
+            `translate(${margin.left},${height})`)
+        .call(xAxis)
+
     let g =svg.append("g")
         .attr("class", "body")
-        .attr("transform",  // сдвиг объекта вправо
+        .attr("transform",
             `translate(${margin.left},${0})`);
     g.selectAll("rect.bar")
         .data(selectedData)
@@ -66,5 +71,5 @@ function barchartPerformance(d3SelectedRootElement, state) {
         .attr('height', barHeight-1)
         .attr("width", d => xScale(d[state.encodeField]))
         .style('fill', d => colorSpectrum[d.continent])
-        .style('stroke', 'orange');
+        // .style('stroke', 'orange');
 }
