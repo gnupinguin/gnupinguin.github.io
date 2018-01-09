@@ -12,7 +12,11 @@
     <a href="hw1/hw1.html"> First task</a>
   </li>
   <li>
-    <a href="hw2/hw2.html"> Second task</a>
+  Second task
+    <ul>
+    <li><a href="hw2/hw2.html"> Task</a></li>
+    <li><a href="hw2/answers.md"> Answers</a></li>
+    </ul>
   </li>
   <li>
       Third task
