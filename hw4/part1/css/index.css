@@ -1,0 +1,18 @@
+.link {
+    stroke: darkgray;
+    stroke-width: .20px;
+}
+.link-lighted {
+    stroke: black;
+    stroke-width: .50px;
+}
+
+.node {
+    fill: white;
+    stroke: #000;
+    stroke-width: .9px;
+}
+
+.node:hover {
+    fill: steelblue;
+}

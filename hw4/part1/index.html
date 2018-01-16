@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>Homework 4 (part 1)</title>
+    <script src="../../lib/d3.min.js"></script>
+    <script src="js/Graph.js"></script>
+    <script src="js/script.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+<body>
+<!--<label><input type="radio" name="Mode" value="ranking" checked> Ranking</label>-->
+<!--<label><input type="radio" name="Mode" value="scatter" > Scatter</label>-->
+<!--<label><input type="radio" name="Mode" value="circular" > Circular</label>-->
+<!--<label><input type="radio" name="Mode" value="grouped" > Grouped</label>-->
+
+<div >
+    <form id='isRanking'>
+        Ranking:
+        <label><input type="radio" name="rankingRadioBtn" value="0" checked> No </label>
+        <label><input type="radio" name="rankingRadioBtn" value="1" > Yes </label>
+    </form>
+    Rank by:
+    <select id="rank">
+        <option value="gdp" >GDP</option>
+        <option value="population" selected>Population</option>
+        <option value="life_expectancy">Life Expectancy</option>
+    </select>
+</div>
+
+<!--<div id='scatter' >-->
+    <!--<form>-->
+        <!--Coordinates:-->
+        <!--<label><input type="radio" name="Coordinates" value="lon/lat" checked> Longitude/Latitude</label>-->
+        <!--<label><input type="radio" name="Coordinates" value="gdp/pop" > GDP/Population</label>-->
+    <!--</form>-->
+<!--</div>-->
+<!--<div id='circular'>-->
+    <!--Sort by:-->
+    <!--<select id="Sort">-->
+        <!--<option value="gdp" >GDP</option>-->
+        <!--<option value="population" selected>Population</option>-->
+    <!--</select>-->
+    <!--<label><input type="checkbox" name="CircleGrouped" value="grouped"> To group</label>-->
+<!--</div>-->
+<!--<div id='grouped'>-->
+    <!--<label><input type="checkbox" name="Grouped" value="grouped"> To group</label>-->
+    <!--<select id="GroupType">-->
+        <!--<option value="horizontal" selected>Horizontal</option>-->
+        <!--<option value="circular">Circular</option>-->
+    <!--</select>-->
+<!--</div>-->
+
+<svg id='plot' width="900" height="2000"> </svg>
+</body>
+</html>
