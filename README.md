@@ -1,4 +1,4 @@
-# ITMO-Visualisation-Course
+# Visualisation-Course
 
 <h3>Contacts</h3>
 <ul> 
